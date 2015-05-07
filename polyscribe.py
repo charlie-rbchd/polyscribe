@@ -22,33 +22,49 @@
 
 from music21 import *
 
-def convert(filenames, destination):
+class AudioToSheetMusicConverter:
     """Convert audio files to sheet music"""
 
-    # Generate a multi-part score using each file as a part
-    parts = [audioSearch.transcriber.monophonicStreamFromFile(filename) for filename in filenames]
-    score = stream.Score()
-    for part in parts:
-        score.append(part)
+    def convert(filenames, destination):
+        """Convert wav files into pdf using lilypond as renderer."""
 
-    # Convert score to PDF and write resulting file at specified destination
-    score.write("lily.pdf", destination)
+        # Generate a multi-part score using each file as a part
+        parts = [audioSearch.transcriber.monophonicStreamFromFile(filename) for filename in filenames]
+        score = stream.Score()
+        for part in parts:
+            score.append(part)
+
+        # Convert score to PDF and write resulting file at specified destination
+        score.write("lily.pdf", destination)
 
 if __name__ == "__main__":
-    import os, sys, argparse
+    import sys
+    converter = AudioToSheetMusicConverter()
 
-    # Parse command-line arguments
-    parser = argparse.ArgumentParser(description='convert polyphonic multi-track audio to sheet music')
-    parser.add_argument('input', metavar='INPUT', type=str, nargs='+', help='input file(s) path(s)')
-    parser.add_argument('--output', type=str, nargs=1, help='output file path (without extension)')
+    if len(sys.argv) < 2:
+        import wx
+        import gui
 
-    args = parser.parse_args(sys.argv[1:])
+        # Launch the graphic user interface if no command-line arguments are supplied
+        app = wx.App(False)
+        frame = gui.MainFrame(converter)
+        app.MainLoop()
+    else:
+        import os
+        import argparse
 
-    # Expand path arguments into absolute paths
-    input = [os.path.abspath(filename) for filename in args.input if os.path.exists(filename)]
-    output = args.output[0] if args.output else "output"
-    output = os.path.abspath(output)
+        # Parse command-line arguments
+        parser = argparse.ArgumentParser(description="convert polyphonic multi-track audio to sheet music")
+        parser.add_argument("input", metavar="INPUT", type=str, nargs="+", help="input file(s) path(s)")
+        parser.add_argument("--output", type=str, nargs=1, help="output file path (without extension)")
 
-    # Convert input files and output the result
-    convert(input, output)
-    os.remove(output)
+        args = parser.parse_args(sys.argv[1:])
+
+        # Expand path arguments into absolute paths
+        input = [os.path.abspath(filename) for filename in args.input if os.path.exists(filename)]
+        output = args.output[0] if args.output else "output"
+        output = os.path.abspath(output)
+
+        # Convert input files and output the result
+        converter.convert(input, output)
+        os.remove(output)
