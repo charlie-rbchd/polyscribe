@@ -25,7 +25,7 @@ from music21 import *
 class AudioToSheetMusicConverter:
     """Convert audio files to sheet music"""
 
-    def convert(filenames, destination):
+    def convert(self, filenames, destination):
         """Convert wav files into pdf using lilypond as renderer."""
 
         # Generate a multi-part score using each file as a part
