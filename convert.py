@@ -21,6 +21,7 @@
 # SOFTWARE.
 
 import transcribe
+from music21 import *
 
 class AudioToSheetMusicConverter:
     """Convert audio files to sheet music."""

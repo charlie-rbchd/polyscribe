@@ -51,5 +51,5 @@ if __name__ == "__main__":
         output = os.path.abspath(output)
 
         # Convert input files and output the result
-        converter.convert(input, output)
+        for progress in converter.convert(input, output): continue
         os.remove(output)
