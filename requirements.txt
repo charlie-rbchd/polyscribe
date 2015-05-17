@@ -1,0 +1,5 @@
+ObjectListView>=1.3.1
+numpy>=1.9.2
+scipy>=0.15.1
+matplotlib>=1.4.3
+music21==2.0.0
