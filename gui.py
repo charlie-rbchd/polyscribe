@@ -103,28 +103,31 @@ class MainPanel(wx.Panel):
 
         if self.converter and len(self.file_list):
             # Prompt the user to select a destination for the converted file
-            save_dialog = wx.FileDialog(self, defaultDir=os.getcwd(),
+            saveDialog = wx.FileDialog(self, defaultDir=os.getcwd(),
                                         defaultFile="output.pdf",
                                         style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
 
-            if save_dialog.ShowModal() == wx.ID_OK:
+            if saveDialog.ShowModal() == wx.ID_OK:
                 # Start the conversion process in a different thread
+                outputPath = saveDialog.GetPath().replace(".pdf", "")
                 startWorker(self.OnConversionCompleted, self.convertWorker,
-                            wargs=([file.path for file in self.file_list], save_dialog.GetPath()))
+                            wargs=([file.path for file in self.file_list], outputPath))
 
                 # Show an indeterminate progress bar while the conversion is happening in the background.
                 self.progressComplete = False
                 self.keepGoing = True
-                self.progressDialog = wx.ProgressDialog("Converting to sheet music",
-                                                        "This may take a while...",
-                                                        parent=self,
-                                                        style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT)
-                while self.keepGoing and not self.progressComplete:
-                    self.keepGoing = self.progressDialog.Pulse()[0]
-                    wx.MilliSleep(30)
+                progressDialog = wx.ProgressDialog("Converting to sheet music",
+                                                   "This may take a while...",
+                                                   parent=self,
+                                                   style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT)
 
-                self.progressDialog.Destroy()
-                del self.progressDialog
+                while self.keepGoing and not self.progressComplete:
+                    self.keepGoing = progressDialog.Pulse()[0]
+                    wx.MilliSleep(30)
+                progressDialog.Destroy()
+
+                if os.path.exists(outputPath):
+                    os.remove(outputPath)
 
     def OnKeyUp(self, evt):
         """Keyboard keyup event handler."""
@@ -142,7 +145,6 @@ class MainPanel(wx.Panel):
 
         if result.get():
             self.progressComplete = True
-        del self.progressComplete, self.keepGoing
 
     def convertWorker(self, filenames, destination):
         """Conversion worker."""
