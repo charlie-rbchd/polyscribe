@@ -28,5 +28,21 @@ class AudioToSheetMusicConverter:
     def convert(self, filenames, destination):
         """Convert wav files into pdf using lilypond as renderer."""
 
-        score = transcribe.polyphonicStreamFromFiles(filenames)
+        max_progress = len(filenames) + 2
+        progress = 0
+
+        parts = []
+        for filename in filenames:
+            parts.append(transcribe.monophonicStreamFromFile(filename))
+            progress += 1
+            yield progress / max_progress
+
+        score = stream.Score()
+        for part in parts:
+            score.append(part)
+        progress += 1
+        yield progress / max_progress
+
         score.write("lily.pdf", destination)
+        progress += 1
+        yield progress / max_progress

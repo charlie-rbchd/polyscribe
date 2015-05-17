@@ -25,6 +25,7 @@ import stat
 import time
 import wx
 
+from wx.lib.delayedresult import startWorker
 from ObjectListView import ObjectListView, ColumnDefn
 
 class MyFileDropTarget(wx.FileDropTarget):
@@ -85,7 +86,7 @@ class MainPanel(wx.Panel):
         self.olv.oddRowsBackColor = "#efefef"
         self.setFiles()
 
-        self.btn = wx.Button(self, wx.ID_ANY, "Convert", size=(0, 40))
+        self.btn = wx.Button(self, wx.ID_ANY, "Convert")
 
         # Event bindings
         self.Bind(wx.EVT_BUTTON, self.OnConvert, self.btn)
@@ -94,7 +95,7 @@ class MainPanel(wx.Panel):
         # Element positioning
         sizer = wx.BoxSizer(wx.VERTICAL)
         sizer.Add(self.olv, 1, wx.EXPAND)
-        sizer.Add(self.btn, 0, wx.EXPAND)
+        sizer.Add(self.btn, 0, wx.TOP | wx.BOTTOM | wx.ALIGN_CENTER, 10)
         self.SetSizer(sizer)
 
     def OnConvert(self, evt):
@@ -107,8 +108,23 @@ class MainPanel(wx.Panel):
                                         style=wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT)
 
             if save_dialog.ShowModal() == wx.ID_OK:
-                self.converter.convert([file.path for file in self.file_list],
-                                       save_dialog.GetPath())
+                # Start the conversion process in a different thread
+                startWorker(self.OnConversionCompleted, self.convertWorker,
+                            wargs=([file.path for file in self.file_list], save_dialog.GetPath()))
+
+                # Show an indeterminate progress bar while the conversion is happening in the background.
+                self.progressComplete = False
+                self.keepGoing = True
+                self.progressDialog = wx.ProgressDialog("Converting to sheet music",
+                                                        "This may take a while...",
+                                                        parent=self,
+                                                        style=wx.PD_APP_MODAL | wx.PD_CAN_ABORT)
+                while self.keepGoing and not self.progressComplete:
+                    self.keepGoing = self.progressDialog.Pulse()[0]
+                    wx.MilliSleep(30)
+
+                self.progressDialog.Destroy()
+                del self.progressDialog
 
     def OnKeyUp(self, evt):
         """Keyboard keyup event handler."""
@@ -120,6 +136,21 @@ class MainPanel(wx.Panel):
             self.removeFiles(selected_objs)
 
         evt.Skip()
+
+    def OnConversionCompleted(self, result):
+        """Conversion worker event handler."""
+
+        if result.get():
+            self.progressComplete = True
+        del self.progressComplete, self.keepGoing
+
+    def convertWorker(self, filenames, destination):
+        """Conversion worker."""
+
+        for progress in self.converter.convert(filenames, destination):
+            if not self.keepGoing:
+                return False
+        return True
 
     def updateDisplay(self, file_list):
         """Format and diplay file information inside the ObjectListView."""
