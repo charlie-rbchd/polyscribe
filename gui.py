@@ -172,6 +172,10 @@ class MainFrame(wx.Frame):
 
         wx.Frame.__init__(self, None, title="Polyscribe", size=(650,500))
         panel = MainPanel(self, converter)
+
+        menu = wx.MenuBar()
+        self.SetMenuBar(menu)
+
         self.Show()
 
 if __name__ == "__main__":
