@@ -36,14 +36,14 @@ class AudioToSheetMusicConverter:
         for filename in filenames:
             parts.append(transcribe.monophonicStreamFromFile(filename))
             progress += 1
-            yield progress / max_progress
+            yield int(float(progress) / float(max_progress) * 100)
 
         score = stream.Score()
         for part in parts:
             score.append(part)
         progress += 1
-        yield progress / max_progress
+        yield int(float(progress) / float(max_progress) * 100)
 
         score.write("lily.pdf", destination)
         progress += 1
-        yield progress / max_progress
+        yield int(float(progress) / float(max_progress) * 100)
