@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 import transcribe
-from music21 import *
+from music21 import stream, metadata
 
 class AudioToSheetMusicConverter:
     """Convert audio files to sheet music."""
@@ -39,6 +39,9 @@ class AudioToSheetMusicConverter:
             yield int(float(progress) / float(max_progress) * 100)
 
         score = stream.Score()
+        score.metadata = metadata.Metadata()
+        score.metadata.title = filenames[0] # TODO: Include all filenames?
+        score.metadata.composer = "Polyscribe"
         for part in parts:
             score.append(part)
         progress += 1
