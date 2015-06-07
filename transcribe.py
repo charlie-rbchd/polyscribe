@@ -54,6 +54,6 @@ def monophonicStreamFromFile(filename):
     audioSearch.recordSampleRate = wv.getframerate()
     wv.close()
 
-    audioSearch.audioChunkLength = 1024
+    audioSearch.audioChunkLength = 256
 
-    return audioSearch.transcriber.monophonicStreamFromFile(filename)
+    return audioSearch.transcriber.monophonicStreamFromFile(filename, scale.ChromaticScale())
