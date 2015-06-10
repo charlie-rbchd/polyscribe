@@ -87,7 +87,7 @@ def detectPitchFrequencies(freqFromAQList, useScale=None):
     """Detect the pitches of the notes from a list of frequencies."""
 
     if useScale is None:
-        useScale = scale.MajorScale('C4')
+        useScale = scale.ChromaticScale()
     (thresholds, pitches) = prepareThresholds(useScale)
 
     detectedPitchesFreq = []
@@ -182,7 +182,7 @@ def pitchFrequenciesToObjects(detectedPitchesFreq, useScale=None):
     """Return a list of the pitches that best match the input frequencies."""
 
     if useScale is None:
-        useScale = scale.MajorScale('C4')
+        useScale = scale.ChromaticScale()
 
     detectedPitchObjects = []
     (thresholds, pitches) = prepareThresholds(useScale)
@@ -350,14 +350,12 @@ def polyphonicStreamFromFiles(filenames):
 def monophonicStreamFromFile(filename):
     """Generate a score part from a wav file."""
 
-    useScale = scale.ChromaticScale()
-
     freqFromAQList = getFrequenciesFromAudioFile(filename, 256)
 
-    detectedPitchesFreq = detectPitchFrequencies(freqFromAQList, useScale)
+    detectedPitchesFreq = detectPitchFrequencies(freqFromAQList)
     detectedPitchesFreq = smoothFrequencies(detectedPitchesFreq)
 
-    detectedPitchObjects = pitchFrequenciesToObjects(detectedPitchesFreq, useScale)
+    detectedPitchObjects = pitchFrequenciesToObjects(detectedPitchesFreq)
     (notesList, durationList) = joinConsecutiveIdenticalPitches(detectedPitchObjects)
     part = notesAndDurationsToStream(notesList, durationList, removeRestsAtBeginning=True)
     return part
