@@ -20,11 +20,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+import sys
 import transcribe
-from music21 import stream, metadata
+from music21 import environment, stream, metadata
 
 class AudioToSheetMusicConverter:
     """Convert audio files to sheet music."""
+
+    def __init__(self):
+        """Constructor."""
+
+        if sys.platform == "darwin":
+            import os
+
+            LILYPOND_EXEC_PATH = "/Applications/LilyPond.app/Contents/Resources/bin/lilypond"
+            if os.path.exists(LILYPOND_EXEC_PATH):
+                environment.set("lilypondPath", LILYPOND_EXEC_PATH)
 
     def convert(self, filenames, destination):
         """Convert wav files into pdf using lilypond as renderer."""
