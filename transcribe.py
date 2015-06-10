@@ -1,24 +1,32 @@
-# The MIT License (MIT)
-
+# Copyright (c) 2011 Michael Scott Cuthbert and the music21 Project
 # Copyright (c) 2015 Joel Robichaud
 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
+# All rights reserved.
 
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
+# * Redistributions of source code must retain the above copyright notice, this
+#   list of conditions and the following disclaimer.
+
+# * Redistributions in binary form must reproduce the above copyright notice,
+#   this list of conditions and the following disclaimer in the documentation
+#   and/or other materials provided with the distribution.
+
+# * Neither the name of [project] nor the names of its
+#   contributors may be used to endorse or promote products derived from
+#   this software without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+# DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+# SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+# OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+# OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import copy
 import math
@@ -28,8 +36,8 @@ import scipy.signal
 from music21 import stream, note, pitch, scale
 
 def interpolation(correlation, peak):
-    """Interpolation for estimating the true position of an
-    inter-sample maximum when nearby samples are known."""
+    """Interpolation for estimating the true position of an inter-sample
+    maximum when nearby samples are known."""
 
     curr = correlation[peak]
     prev = correlation[peak - 1] if peak - 1 >= 0 else curr
@@ -40,7 +48,7 @@ def interpolation(correlation, peak):
     return vertex
 
 def getFrequenciesFromAudioFile(filename, blocksize=512):
-    """Gets a list of frequencies from an audio file."""
+    """Retrieve a list of frequencies from an audio file."""
 
     wv = wave.open(filename, 'r')
     srate = wv.getframerate()
@@ -58,18 +66,13 @@ def getFrequenciesFromAudioFile(filename, blocksize=512):
     return freqs
 
 def autocorrelationFunction(signal, srate):
-    """
-    Converts the temporal domain into a frequency domain. In order to do that, it
-    uses the autocorrelation function, which finds periodicities in the signal
-    in the temporal domain and, consequently, obtains the frequency in each instant
-    of time.
-    """
+    """Convert a signal from the time domain into the frequency domain."""
 
     signal = numpy.array(signal)
     correlation = scipy.signal.fftconvolve(signal, signal[::-1], mode='full')
     lengthCorrelation = len(correlation) / 2
     correlation = correlation[lengthCorrelation:]
-    difference = numpy.diff(correlation) #  Calculates the difference between slots
+    difference = numpy.diff(correlation) # Calculate the difference between slots
     positiveDifferences, = numpy.nonzero(numpy.ravel(difference > 0))
     if len(positiveDifferences) == 0:
         finalResult = 10 # Rest
@@ -81,12 +84,7 @@ def autocorrelationFunction(signal, srate):
     return finalResult
 
 def detectPitchFrequencies(freqFromAQList, useScale=None):
-    """
-    Detects the pitches of the notes from a list of frequencies, using thresholds which
-    depend on the useScale option. If useScale is None, the default value is the Major Scale beginning C4.
-
-    Returns the frequency of each pitch after normalizing them.
-    """
+    """Detect the pitches of the notes from a list of frequencies."""
 
     if useScale is None:
         useScale = scale.MajorScale('C4')
@@ -94,22 +92,18 @@ def detectPitchFrequencies(freqFromAQList, useScale=None):
 
     detectedPitchesFreq = []
 
-    for i in range(len(freqFromAQList)):    # to find thresholds and frequencies
+    for i in range(len(freqFromAQList)): # Find thresholds and frequencies
         inputPitchFrequency = freqFromAQList[i]
         unused_freq, pitch_name = normalizeInputFrequency(inputPitchFrequency, thresholds, pitches)
         detectedPitchesFreq.append(pitch_name.frequency)
     return detectedPitchesFreq
 
 def normalizeInputFrequency(inputPitchFrequency, thresholds=None, pitches=None):
-    """
-    Takes in an inputFrequency, a set of threshold values, and a set of allowable pitches
-    (given by prepareThresholds) and returns a tuple of the normalized frequency and the
-    pitch detected (as a :class:`~music21.pitch.Pitch` object)
-    """
+    """Return a tuple of the normalized frequency and the pitch detected."""
 
     if ((thresholds is None and pitches is not None)
          or (thresholds is not None and pitches is None)):
-        raise AudioSearchException("Cannot normalize input frequency if thresholds are given and pitches are not, or vice-versa")
+        raise AudioSearchException("Cannot normalize input frequency if both thresholds and pitches are not given.")
     elif thresholds == None:
         (thresholds, pitches) = prepareThresholds()
 
@@ -121,12 +115,10 @@ def normalizeInputFrequency(inputPitchFrequency, thresholds=None, pitches=None):
         threshold = thresholds[i]
         if remainder < threshold:
             returnPitch = copy.deepcopy(pitches[i])
-            returnPitch.octave = octave - 4 ## PROBLEM
-            #returnPitch.inputFrequency = inputPitchFrequency
+            returnPitch.octave = octave - 4
             name_note = pitch.Pitch(str(pitches[i]))
             return name_note.frequency, returnPitch
-    # else:
-    # above highest threshold
+
     returnPitch = copy.deepcopy(pitches[-1])
     returnPitch.octave = octave - 3
     returnPitch.inputFrequency = inputPitchFrequency
@@ -134,12 +126,8 @@ def normalizeInputFrequency(inputPitchFrequency, thresholds=None, pitches=None):
     return name_note.frequency, returnPitch
 
 def prepareThresholds(useScale=None):
-    """
-    returns two elements.  The first is a list of threshold values
-    for one octave of a given scale, `useScale`,
-    (including the octave repetition) (Default is a ChromaticScale).
-    The second is the pitches of the scale.
-    """
+    """Return a tuple of two lists consisting of the threshold values and the
+    pitches of a scale."""
 
     if useScale is None:
         useScale = scale.ChromaticScale('C4')
@@ -159,10 +147,8 @@ def prepareThresholds(useScale=None):
     return scPitchesThreshold, scPitches
 
 def smoothFrequencies(detectedPitchesFreq, smoothLevels=7, inPlace=True):
-    """
-    Smooths the shape of the signal in order to avoid false detections in the fundamental
-    frequency.
-    """
+    """Smooth the shape of the signal in order to avoid false detections of
+    the fundamental frequency."""
 
     dpf = detectedPitchesFreq
     if inPlace == True:
@@ -170,7 +156,6 @@ def smoothFrequencies(detectedPitchesFreq, smoothLevels=7, inPlace=True):
     else:
         detectedPitchesFreq = copy.copy(dpf)
 
-    #smoothing
     beginning = 0.0
     ends = 0.0
 
@@ -190,14 +175,11 @@ def smoothFrequencies(detectedPitchesFreq, smoothLevels=7, inPlace=True):
             for j in range(smoothLevels):
                 t = t + detectedPitchesFreq[i + j - int(math.floor(smoothLevels / 2.0))]
             detectedPitchesFreq[i] = t / smoothLevels
-    #return detectedPitchesFreq
+
     return [int(round(fq)) for fq in detectedPitchesFreq]
 
 def pitchFrequenciesToObjects(detectedPitchesFreq, useScale=None):
-    """
-    Takes in a list of detected pitch frequencies and returns a tuple where the first element
-    is a list of :class:~`music21.pitch.Pitch` objects that best match these frequencies
-    """
+    """Return a list of the pitches that best match the input frequencies."""
 
     if useScale is None:
         useScale = scale.MajorScale('C4')
@@ -224,19 +206,13 @@ def pitchFrequenciesToObjects(detectedPitchesFreq, useScale=None):
     return detectedPitchObjects
 
 def joinConsecutiveIdenticalPitches(detectedPitchObjects):
-    """
-    takes a list of equally-spaced :class:`~music21.pitch.Pitch` objects
-    and returns a tuple of two lists, the first a list of
-    :class:`~music21.note.Note`
-    or :class:`~music21.note.Rest` objects (each of quarterLength 1.0)
-    and a list of how many were joined together to make that object.
-    """
+    """Return a tuple of two lists consisting of a list of note and rest
+    objects (each of quarterLength 1.0) and a list of how many pitches were
+    joined together to make that object."""
 
-    #initialization
     REST_FREQUENCY = 10
     detectedPitchObjects[0].frequency = REST_FREQUENCY
 
-    #detecting the length of each note
     j = 0
     good = 0
     bad = 0
@@ -250,15 +226,15 @@ def joinConsecutiveIdenticalPitches(detectedPitchObjects):
     while j < len(detectedPitchObjects):
         fr = detectedPitchObjects[j].frequency
 
-        # detect consecutive instances of the same frequency
+        # Detect consecutive instances of the same frequency
         while j < len(detectedPitchObjects) and fr == detectedPitchObjects[j].frequency:
             good = good + 1
 
-            # if more than 6 consecutive identical samples, it might be a note
+            # If more than 6 consecutive identical samples, it might be a note
             if good >= 6:
                 valid_note = True
 
-                # if we've gone 15 or more samples without getting something constant, assume it's a rest
+                # If we've gone 15 or more samples without getting something constant, assume it's a rest
                 if bad >= 15:
                     durationList.append(bad)
                     total_rests = total_rests + 1
@@ -268,8 +244,6 @@ def joinConsecutiveIdenticalPitches(detectedPitchObjects):
         if valid_note == True:
             durationList.append(good)
             total_notes = total_notes + 1
-            ### doesn't this unnecessarily create a note that it doesn't need?
-            ### notesList.append(detectedPitchObjects[j-1].frequency) should work
             n = note.Note()
             n.pitch = detectedPitchObjects[j - 1]
             notesList.append(n)
@@ -281,13 +255,9 @@ def joinConsecutiveIdenticalPitches(detectedPitchObjects):
     return notesList, durationList
 
 def notesAndDurationsToStream(notesList, durationList, removeRestsAtBeginning=True):
-    """
-    take a list of :class:`~music21.note.Note` objects or rests
-    and an equally long list of how long
-    each ones lasts in terms of samples and returns a
-    Stream using the information from quarterLengthEstimation
-    and quantizeDurations.
-    """
+    """Take a list of objects or rests and an equally long list of how long
+    each ones lasts in terms of samples and return a Stream using the information
+    from quarterLengthEstimation and quantizeDurations."""
 
     qle = quarterLengthEstimation(durationList)
     part = stream.Part()
@@ -304,49 +274,32 @@ def notesAndDurationsToStream(notesList, durationList, removeRestsAtBeginning=Tr
     return part
 
 def quarterLengthEstimation(durationList, mostRepeatedQuarterLength=1.0):
-    """
-    takes a list of lengths of notes (measured in
-    audio samples) and tries to estimate what the length of a
-    quarter note should be in this list.
-
-    If mostRepeatedQuarterLength is another number, it still returns the
-    estimated length of a quarter note, but chooses it so that the most
-    common note in durationList will be the other note.
-    """
+    """Take a list of lengths of notes (measured in audio samples) and try to
+    estimate what the length of a quarter note should be in this list."""
 
     dl = copy.copy(durationList)
     dl.append(0)
 
     pdf, bins = histogram(dl,8.0)
-
-    #environLocal.printDebug("HISTOGRAMA %s %s" % (pdf, bins))
-
-    i = len(pdf) - 1 # backwards! it has more sense
+    i = len(pdf) - 1
     while pdf[i] != max(pdf):
         i = i - 1
-    qle = (bins[i] + bins[i + 1]) / 2.0
 
+    qle = (bins[i] + bins[i + 1]) / 2.0
 
     if mostRepeatedQuarterLength == 0:
         mostRepeatedQuarterLength = 1.0
 
     binPosition = 0 - math.log(mostRepeatedQuarterLength, 2)
-    qle = qle * math.pow(2, binPosition) # it normalizes the length to a quarter note
+    qle = qle * math.pow(2, binPosition) # Normalize the length to a quarter note
 
-    #environLocal.printDebug("QUARTER ESTIMATION")
-    #environLocal.printDebug("bins %s " % bins)
-    #environLocal.printDebug("pdf %s" % pdf)
-    #environLocal.printDebug("quarterLengthEstimate %f" % qle)
     return qle
 
 def histogram(data, bins):
-    """
-    Partition the list in `data` into a number of bins defined by `bins`
-    and return the number of elements in each bins and a set of `bins` + 1
-    elements where the first element (0) is the start of the first bin,
-    the last element (-1) is the end of the last bin, and every remaining element (i)
-    is the dividing point between one bin and another.
-    """
+    """Partition a list into a number of bins and return the number of elements
+    in each bins and a set of elements where the first element is the start of
+    the first bin, the last element is the end of the last bin, and every remaining
+    element is the dividing point between one bin and another."""
 
     maxValue = max(data)
     minValue = min(data)
@@ -370,12 +323,7 @@ def histogram(data, bins):
     return container, binsLimits
 
 def quantizeDuration(length):
-    """
-    round an approximately transcribed quarterLength to a better one in
-    music21.
-
-    Should be replaced by a full-featured routine in midi or stream.
-    """
+    """Round an approximated quarterLength duration to better one."""
 
     length = length * 100
     typicalLengths = [25.00, 50.00, 100.00, 150.00, 200.00, 400.00]
