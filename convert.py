@@ -51,7 +51,6 @@ class AudioToSheetMusicConverter:
 
         score = stream.Score()
         score.metadata = metadata.Metadata()
-        score.metadata.title = filenames[0] # TODO: Include all filenames?
         score.metadata.composer = "Polyscribe"
         for part in parts:
             score.append(part)
